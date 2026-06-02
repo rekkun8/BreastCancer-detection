@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Classify | Breast Cancer Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        body.dark-mode {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+
+        nav {
+            background-color: #6200ea;
+            padding: 1rem 2rem;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-right {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 1.5rem;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .toggle-mode-btn {
+            background-color: transparent;
+            border: 2px solid white;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            text-align: center;
+        }
+
+        button {
+            margin: 10px;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background-color: #6200ea;
+            color: white;
+        }
+
+        .dark-mode button {
+            background-color: #333;
+            color: #fff;
+        }
+
+        .img-container {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        img {
+            max-width: 300px;
+            border-radius: 10px;
+            border: 2px solid #ccc;
+        }
+
+        #spinner {
+            display: none;
+            margin-top: 20px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <h1>Breast Cancer AI</h1>
+        <div class="nav-right">
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/classify">Classify</a></li>
+                <li><a href="/segment">Segment</a></li>
+            </ul>
+            <button class="toggle-mode-btn" onclick="toggleDarkMode()">Toggle Dark Mode</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2>Breast Cancer Classification</h2>
+
+        <input type="file" id="imageInput" accept="image/*" />
+        <button onclick="uploadAndClassify()">Classify Image</button>
+
+        <div id="spinner"></div>
+        <p id="classification-result"></p>
+
+        <div class="img-container" id="image-preview" style="display: none;">
+            <div>
+                <h4>Original Image</h4>
+                <img id="original-img" alt="Original Image" />
+            </div>
+            <div>
+                <h4>Grad-CAM Heatmap</h4>
+                <img id="gradcam-img" alt="Grad-CAM Heatmap" />
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleDarkMode() {
+            document.body.classList.toggle("dark-mode");
+        }
+
+        async function uploadAndClassify() {
+            const imageInput = document.getElementById("imageInput");
+            const resultDiv = document.getElementById("classification-result");
+            const gradcamImg = document.getElementById("gradcam-img");
+            const originalImg = document.getElementById("original-img");
+            const imagePreview = document.getElementById("image-preview");
+            const spinner = document.getElementById("spinner");
+
+            if (imageInput.files.length === 0) {
+                alert("Please select an image first.");
+                return;
+            }
+
+            const file = imageInput.files[0];
+            const formData = new FormData();
+            formData.append("image", file);
+
+            resultDiv.textContent = "";
+            imagePreview.style.display = "none";
+            spinner.style.display = "block";
+
+            originalImg.src = URL.createObjectURL(file);
+
+            try {
+                const response = await fetch("http://localhost:4000/classification", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                const data = await response.json();  // ✅ Don't call .then(), just await it
+                console.log("server response:", data);
+
+                resultDiv.textContent = "Prediction: " + data.prediction;
+
+                if (data.gradcam_image_url) {
+                    gradcamImg.src = data.gradcam_image_url;
+                    gradcamImg.alt = "Grad-CAM heatmap";
+                    imagePreview.style.display = "flex";
+                } else {
+                    gradcamImg.alt = "Grad-CAM not available";
+                }
+                
+                if (data.shap_image){
+                    const shapImg = document.createElement("img");
+                    shapImg.src = "http://localhost:4000/" + data.shap_image;
+                    shapImg.alt = "SHAP explanation";
+                    document.getElementById("image-preview").appendChild(shapImg)
+                }
+
+            } catch (error) {
+                resultDiv.textContent = "Error occurred during classification.";
+                console.error("Classification error:", error);
+            } finally {
+                spinner.style.display = "none";
+            }
+        }
+
+
+    </script>
+</body>
+
+</html>

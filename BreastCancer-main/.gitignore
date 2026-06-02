@@ -1,0 +1,26 @@
+# Python virtual environment
+backend/env/
+env/
+venv/
+.venv/
+
+# Compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Model files (too large for GitHub)
+backend/models/
+
+# Node.js
+node_modules/
+package-lock.json
+.bolt/
+
+# Environment variables
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
