@@ -10,8 +10,8 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Model files (too large for GitHub)
-backend/models/
+# Model weight binaries (tracked via Git LFS instead)
+# backend/models/
 
 # Node.js
 node_modules/
